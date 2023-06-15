@@ -1,67 +1,20 @@
-import time
 from dotenv import load_dotenv
 from langchain.llms import OpenAI
 from langchain.prompts import PromptTemplate
 from langchain.chains import LLMChain, SequentialChain
 from langchain.agents import load_tools, initialize_agent, AgentType
+from langchain.embeddings.openai import OpenAIEmbeddings
 import streamlit as st
 import datetime
-import os
 from cachetools import LRUCache
-from serpapi import GoogleSearch
 
+OpenAI_API_KEY = st.secrets["openai_api_key"]
 
-# Load env vars
-load_dotenv()
+embeddings = OpenAIEmbeddings(openai_api_key=OpenAI_API_KEY)
 
-
-llm = OpenAI(temperature=0.9, model_name="gpt-3.5-turbo", max_tokens=2048)
+llm = OpenAI(temperature=0.9, model_name="gpt-3.5-turbo-0613", max_tokens=2048)
 
 cache = LRUCache(maxsize=128)
-
-
-def get_mouthdate(today):
-    key = (today)
-    if key in cache:
-        return cache[key]
-
-    # Prompt templates
-    mouthdate_template = PromptTemplate(
-        input_variables=['today'],
-        template='根据{today} 查询对应的月日是什么'
-    )
-
-    mouthdate_chain = LLMChain(llm=llm, prompt=mouthdate_template, verbose=True, output_key='mouthdate')
-
-    reply = mouthdate_chain({'today': today})
-
-    result = reply['mouthdate']
-    if not isinstance(result, dict) or 'text' not in result:
-        result = {'text': '未找到历史记录'}
-    cache[key] = result
-    return result
-
-def get_history(mouthdate):
-    key = (mouthdate)
-    if key in cache:
-        return cache[key]
-
-    # Prompt templates
-    history_template = PromptTemplate(
-        input_variables=['mouthdate'],
-        template='根据{mouthdate} 查询当天发生的历史是什么'
-    )
-
-    history_chain = LLMChain(llm=llm, prompt=history_template, verbose=True, output_key='history')
-
-    reply = history_chain({'mouthdate': mouthdate})
-
-    result = reply['history']
-    if not isinstance(result, dict) or 'text' not in result:
-        result = {'text': '未找到历史记录'}
-    cache[key] = result
-    return result
-
 
 def get_constellation(birthday, today):
     key = (birthday, today)
@@ -110,21 +63,12 @@ def on_submit(prompt):
 
         constellation = get_constellation(prompt, today)
         horoscope = get_astrology_horoscope(constellation, today)
-        mouthdate = get_mouthdate(today)
-        today_history = get_history(mouthdate)
 
         with st.expander("您是什么星座"):
             st.info(constellation)
 
         with st.expander("您本日星座运势"):
             st.info(horoscope)
-
-        with st.expander("相同月日发生的历史"):
-            if today_history:
-                st.info(f"相同月日发生的历史：{today_history['text']}")
-            else:
-                st.warning("未找到该历史")
-
 
 
 st.title('查询您的本日星座运势')
