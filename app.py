@@ -12,7 +12,7 @@ OpenAI_API_KEY = st.secrets["openai_api_key"]
 
 embeddings = OpenAIEmbeddings(openai_api_key=OpenAI_API_KEY)
 
-llm = OpenAI(temperature=0.9, model_name="gpt-3.5-turbo-0613", max_tokens=2048)
+llm = OpenAI(temperature=0.9, model_name="gpt-3.5-turbo", max_tokens=2048)
 
 cache = LRUCache(maxsize=128)
 
